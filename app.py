@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import pickle
 
-# Judul Aplikasi
+# Judul
 st.title("Prediksi Penyakit Liver (ILPD Dataset)")
 
 # Load dataset
@@ -22,18 +22,20 @@ df = load_data()
 if st.checkbox("Tampilkan Data Awal"):
     st.write(df.head())
 
-# Sidebar input pengguna
+# Sidebar input
 st.sidebar.header("Input Data Pasien")
-age = st.sidebar.slider("Usia", 4, 90, 45)
-gender = st.sidebar.selectbox("Jenis Kelamin", ['Male', 'Female'])
-tb = st.sidebar.slider("Total Bilirubin", 0.1, 75.0, 1.0)
-db = st.sidebar.slider("Direct Bilirubin", 0.1, 20.0, 0.5)
-alkphos = st.sidebar.slider("Alkaline Phosphotase", 100, 2000, 250)
-sgpt = st.sidebar.slider("SGPT", 10, 2000, 30)
-sgot = st.sidebar.slider("SGOT", 10, 2000, 35)
-tp = st.sidebar.slider("Total Protein", 2.0, 9.0, 6.5)
-alb = st.sidebar.slider("Albumin", 0.5, 6.5, 3.0)
-ag_ratio = st.sidebar.slider("A/G Ratio", 0.1, 2.5, 1.0)
+
+# Input dinamis
+input_dict = {}
+for column in df.columns[:-1]:  # Kecuali 'Dataset'
+    if column == 'Gender':
+        input_dict[column] = st.sidebar.selectbox("Jenis Kelamin", ['Male', 'Female'])
+    else:
+        min_val = float(df[column].min())
+        max_val = float(df[column].max())
+        mean_val = float(df[column].mean())
+        step = (max_val - min_val) / 100.0 if max_val != min_val else 0.01
+        input_dict[column] = st.sidebar.slider(column, min_val, max_val, mean_val, step=step)
 
 # Pilih model
 model_choice = st.sidebar.selectbox("Pilih Model", ["K-Nearest Neighbors", "Decision Tree", "Naive Bayes"])
@@ -53,10 +55,10 @@ elif model_choice == "Naive Bayes":
     with open("model_nb.pkl", "rb") as f:
         model = pickle.load(f)
 
-# Siapkan input user
-input_data = np.array([[age, 1 if gender == 'Male' else 0, tb, db, alkphos,
-                        sgpt, sgot, tp, alb, ag_ratio]])
-input_scaled = scaler.transform(input_data)
+# Siapkan data input
+input_df = pd.DataFrame([input_dict])
+input_df['Gender'] = input_df['Gender'].map({'Male': 1, 'Female': 0})
+input_scaled = scaler.transform(input_df)
 
 # Prediksi
 prediction = model.predict(input_scaled)[0]
