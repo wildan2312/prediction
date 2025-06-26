@@ -1,12 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import KNeighborsClassifier
 import pickle
-
-# Judul
-st.title("Prediksi Penyakit Liver - ILPD Dataset")
 
 # Load model dan scaler
 with open("model_knn.pkl", "rb") as f:
@@ -15,42 +10,36 @@ with open("model_knn.pkl", "rb") as f:
 with open("scaler.pkl", "rb") as f:
     scaler = pickle.load(f)
 
-# Input data dari user
-st.sidebar.header("Masukkan Data Pasien")
+st.title("Prediksi Penyakit Liver (ILPD Dataset)")
+
+# Sidebar Input
+st.sidebar.header("Input Data Pasien")
 
 age = st.sidebar.slider("Usia", 4, 90, 45)
 gender = st.sidebar.selectbox("Jenis Kelamin", ["Male", "Female"])
 tb = st.sidebar.slider("Total Bilirubin", 0.1, 75.0, 1.0)
 db = st.sidebar.slider("Direct Bilirubin", 0.1, 20.0, 0.5)
 alkphos = st.sidebar.slider("Alkaline Phosphotase", 100, 2000, 250)
-sgpt = st.sidebar.slider("SGPT", 10, 2000, 30)
-sgot = st.sidebar.slider("SGOT", 10, 2000, 35)
-tp = st.sidebar.slider("Total Protein", 2.0, 9.0, 6.5)
+sgpt = st.sidebar.slider("Alamine Aminotransferase (SGPT)", 10, 2000, 30)
+sgot = st.sidebar.slider("Aspartate Aminotransferase (SGOT)", 10, 2000, 35)
+tp = st.sidebar.slider("Total Proteins", 2.0, 9.0, 6.5)
 alb = st.sidebar.slider("Albumin", 0.5, 6.5, 3.0)
-ag_ratio = st.sidebar.slider("A/G Ratio", 0.1, 2.5, 1.0)
+ag_ratio = st.sidebar.slider("Albumin and Globulin Ratio", 0.1, 2.5, 1.0)
 
-# Buat dataframe dari input
-input_df = pd.DataFrame({
-    "Age": [age],
-    "Gender": [gender],
-    "TB": [tb],
-    "DB": [db],
-    "Alkphos": [alkphos],
-    "SGPT": [sgpt],
-    "SGOT": [sgot],
-    "TP": [tp],
-    "ALB": [alb],
-    "A/G Ratio": [ag_ratio]
-})
+# Konversi gender ke numerik
+gender_numeric = 1 if gender == "Male" else 0
 
-# Mapping gender
-input_df["Gender"] = input_df["Gender"].map({"Male": 1, "Female": 0})
+# Buat DataFrame input dengan nama kolom yang sesuai
+input_df = pd.DataFrame([[
+    age, gender_numeric, tb, db, alkphos, sgpt, sgot, tp, alb, ag_ratio
+]], columns=[
+    "Age", "Gender", "Total_Bilirubin", "Direct_Bilirubin",
+    "Alkaline_Phosphotase", "Alamine_Aminotransferase",
+    "Aspartate_Aminotransferase", "Total_Proteins",
+    "Albumin", "Albumin_and_Globulin_Ratio"
+])
 
-# Pastikan urutan kolom sama seperti saat pelatihan model
-feature_order = ["Age", "Gender", "TB", "DB", "Alkphos", "SGPT", "SGOT", "TP", "ALB", "A/G Ratio"]
-input_df = input_df[feature_order]
-
-# Normalisasi input
+# Preprocessing input
 input_scaled = scaler.transform(input_df)
 
 # Prediksi
